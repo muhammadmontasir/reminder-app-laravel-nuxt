@@ -15,7 +15,6 @@ Route::prefix('v1')->group(function () {
     Route::get('events/{eventId}', [EventController::class, 'show']);
     Route::post('events', [EventController::class, 'store']);
     Route::put('events/{eventId}', [EventController::class, 'update']);
-    Route::patch('events/{eventId}', [EventController::class, 'update']);
     Route::delete('events/{eventId}', [EventController::class, 'destroy']);
     
     Route::post('events/sync', [SyncController::class, 'sync'])
