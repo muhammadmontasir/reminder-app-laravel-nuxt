@@ -20,20 +20,23 @@ class Event extends Model
         'status',
         'metadata',
         'last_synced_at',
-        'is_online'
+        'is_online',
+        'reminder_time',
+        'participants',
     ];
 
     protected $casts = [
+        'participants' => 'array',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
+        'reminder_time' => 'datetime',
+        'metadata' => 'array',
         'last_synced_at' => 'datetime',
-        'metadata' => 'array'
     ];
 
-    public function reminders()
-    {
-        return $this->hasMany(Reminder::class);
-    }
+    protected $attributes = [
+        'participants' => '[]',
+    ];
 
     public function scopeUpcoming($query)
     {

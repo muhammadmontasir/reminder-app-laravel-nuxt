@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Event;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Collection;
+use Carbon\Carbon;
 
 class EventRepository
 {
@@ -42,6 +43,30 @@ class EventRepository
     {
         return Event::orderBy('start_time', 'desc')
             ->orderBy('end_time', 'desc')
+            ->get();
+    }
+
+    public function getUpcomingReminders(Carbon $now): Collection
+    {
+        return $this->model
+            ->whereNotNull('reminder_time')
+            ->where('reminder_time', '<=', $now)
+            ->where('status', 'upcoming')
+            ->get();
+    }
+
+    public function markReminderSent(Event $event): void
+    {
+        $event->update([
+            'reminder_time' => null
+        ]);
+    }
+
+    public function findEventsForParticipant(string $email): Collection
+    {
+        return $this->model
+            ->whereJsonContains('participants', $email)
+            ->orderBy('start_time', 'desc')
             ->get();
     }
 }
