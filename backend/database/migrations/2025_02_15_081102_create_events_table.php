@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('events', function (Blueprint $table) {
             $table->id();
-            $table->uuid('client_id')->unique();
+            $table->uuid('client_id');
             $table->string('event_id')->unique(); // FORMAT: EVENT-{TIMESTAMP}
             $table->string('title');
             $table->text('description')->nullable();

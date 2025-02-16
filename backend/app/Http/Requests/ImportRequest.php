@@ -34,6 +34,7 @@ class ImportRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'file.required' => 'Please provide a CSV file',
             'file.mimes' => 'The file must be a CSV file',
             'file.max' => 'The file size must not exceed 10MB'
         ];

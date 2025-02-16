@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Repositories\EventRepository;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
+use Illuminate\Support\Str;
+use App\Events\EventCreated;
 
 class CsvImportService
 {
@@ -62,7 +65,6 @@ class CsvImportService
 
     public function importContent(string $content)
     {
-        info('importing content');
         try {
             $handle = fopen('php://temp', 'r+');
             fwrite($handle, $content);
@@ -110,6 +112,7 @@ class CsvImportService
     protected function validateHeaders(array $headers): void
     {
         $requiredHeaders = ['title', 'start_time', 'end_time'];
+        $allowedHeaders = [...$requiredHeaders, 'description', 'reminder_time', 'participants'];
         $missing = array_diff($requiredHeaders, $headers);
 
         if (!empty($missing)) {
@@ -122,12 +125,31 @@ class CsvImportService
         $validator = Validator::make($record, [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'start_time' => 'required|date_format:Y-m-d',
-            'end_time' => 'required|date_format:Y-m-d|after_or_equal:start_time',
+            'start_time' => 'required|date_format:Y-m-d H:i:s',
+            'end_time' => 'required|date_format:Y-m-d H:i:s|after_or_equal:start_time',
+            'reminder_time' => 'nullable|date_format:Y-m-d H:i:s',
+            'participants' => 'nullable|string'
         ]);
 
         if ($validator->fails()) {
             throw new \Exception($validator->errors()->first());
+        }
+
+        if (!empty($record['reminder_time'])) {
+            $reminderTime = Carbon::parse($record['reminder_time']);
+            $startTime = Carbon::parse($record['start_time']);
+            
+            if ($reminderTime->isPast()) {
+                throw new \Exception('Reminder time must be in the future');
+            }
+            
+            if ($reminderTime->isAfter($startTime)) {
+                throw new \Exception('Reminder time must be before the event start time');
+            }
+
+            if (empty($record['participants'])) {
+                throw new \Exception('Participants are required when setting a reminder time');
+            }
         }
 
         return true;
@@ -135,17 +157,41 @@ class CsvImportService
 
     protected function processRecord(array $record)
     {
-        $endDate = \Carbon\Carbon::parse($record['end_time']);
-        $status = $endDate->isFuture() ? 'upcoming' : 'completed';
+        $endDate = Carbon::parse($record['end_time']);
+        $status = $endDate->isPast() ? 'completed' : 'upcoming';
 
-        return $this->eventRepository->create([
-            'client_id' => (string) \Str::uuid(),
+        $participants = null;
+        if (!empty($record['participants'])) {
+            $participants = array_map('trim', explode(',', $record['participants']));
+            
+            foreach ($participants as $email) {
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    throw new \Exception("Invalid email address: {$email}");
+                }
+            }
+        }
+
+        if ($status === 'completed') {
+            $record['reminder_time'] = null;
+            $participants = null;
+        }
+
+        $event = $this->eventRepository->create([
+            'client_id' => (string) Str::uuid(),
             'event_id' => $this->idGenerationService->generate(),
             'title' => $record['title'],
             'description' => $record['description'] ?? null,
             'start_time' => $record['start_time'],
             'end_time' => $record['end_time'],
+            'reminder_time' => $record['reminder_time'] ?? null,
+            'participants' => $participants,
             'status' => $status
         ]);
+
+        if ($event && $status === 'upcoming' && !empty($record['reminder_time'])) {
+            event(new EventCreated($event));
+        }
+
+        return $event;
     }
 }
