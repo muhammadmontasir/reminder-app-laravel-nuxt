@@ -24,7 +24,8 @@ class AuthService
 
         return [
             'user' => $user,
-            'token' => $token
+            'token' => $token,
+            'client_id' => $user->client_id
         ];
     }
 

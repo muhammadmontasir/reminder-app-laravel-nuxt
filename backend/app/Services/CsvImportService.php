@@ -177,7 +177,7 @@ class CsvImportService
         }
 
         $event = $this->eventRepository->create([
-            'client_id' => (string) Str::uuid(),
+            'client_id' => auth()->user()->client_id,
             'event_id' => $this->idGenerationService->generate(),
             'title' => $record['title'],
             'description' => $record['description'] ?? null,

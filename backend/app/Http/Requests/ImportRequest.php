@@ -27,8 +27,16 @@ class ImportRequest extends FormRequest
                 'file',
                 'mimes:csv,txt',
                 'max:10240', // 10MB max
-            ]
+            ],
+            'client_id' => 'sometimes|uuid'
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'client_id' => auth()->user()->client_id
+        ]);
     }
 
     public function messages(): array

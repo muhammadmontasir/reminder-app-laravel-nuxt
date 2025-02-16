@@ -23,6 +23,7 @@ class AuthController extends Controller
             'message' => 'Registration successful',
             'user' => $result['user'],
             'token' => $result['token'],
+            'client_id' => $result['client_id']
         ], 201);
     }
 
@@ -34,6 +35,7 @@ class AuthController extends Controller
             'message' => 'Login successful',
             'user' => $result['user'],
             'token' => $result['token'],
+            'client_id' => $result['user']->client_id
         ]);
     }
 

@@ -34,6 +34,14 @@ class EventRepository
         return $this->model->where('client_id', $clientId)->first();
     }
 
+    public function findByClientIdAndEventId(string $clientId, string $eventId)
+    {
+        return $this->model->where([
+            'client_id' => $clientId,
+            'event_id' => $eventId
+        ])->first();
+    }
+
     public function findByEventId(string $eventId): ?Event
     {
         return Event::where('event_id', $eventId)->first();

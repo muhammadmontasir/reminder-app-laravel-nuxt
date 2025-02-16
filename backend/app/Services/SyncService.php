@@ -20,16 +20,55 @@ class SyncService
     {
         try {
             return DB::transaction(function () use ($events) {
-                $results = [];
+                $results = [
+                    'created' => [],
+                    'updated' => [],
+                    'unchanged' => []
+                ];
                 
                 foreach ($events as $eventData) {
                     $eventData['updated_at'] = $eventData['updated_at'] ?? now();
-                    $results[] = $this->syncEvent($eventData);
+                    
+                    if (Carbon::parse($eventData['end_time'])->isPast()) {
+                        $eventData['status'] = 'completed';
+                        $eventData['reminder_time'] = null;
+                        $eventData['participants'] = null;
+                    }
+                    
+                    if (!isset($eventData['event_id'])) {
+                        $eventData['event_id'] = $this->idGenerationService->generate();
+                        $event = $this->eventRepository->create($eventData);
+                        $results['created'][] = $event;
+                        EventCreated::dispatch($event);
+                    } else {
+                        $existingEvent = $this->eventRepository->findByClientIdAndEventId(
+                            $eventData['client_id'],
+                            $eventData['event_id']
+                        );
+                        
+                        if (!$existingEvent) {
+                            $event = $this->eventRepository->create($eventData);
+                            $results['created'][] = $event;
+                            EventCreated::dispatch($event);
+                        } else {
+                            // Last write wins - if incoming event is newer or same time
+                            if (strtotime($eventData['updated_at']) >= strtotime($existingEvent->updated_at)) {
+                                $event = $this->eventRepository->update($existingEvent, $eventData);
+                                $results['updated'][] = $event;
+                                EventCreated::dispatch($event);
+                            } else {
+                                $results['unchanged'][] = $existingEvent;
+                            }
+                        }
+                    }
                 }
 
                 return [
                     'success' => true,
-                    'synced_events' => $results
+                    'created' => count($results['created']),
+                    'updated' => count($results['updated']),
+                    'unchanged' => count($results['unchanged']),
+                    'events' => $results
                 ];
             });
         } catch (\Exception $e) {
@@ -39,51 +78,5 @@ class SyncService
             ]);
             throw $e;
         }
-    }
-
-    protected function syncEvent(array $eventData)
-    {
-        $endTime = Carbon::parse($eventData['end_time']);
-        $eventData['status'] = $endTime->isPast() ? 'completed' : 'upcoming';
-
-        if ($eventData['status'] === 'completed') {
-            $eventData['reminder_time'] = null;
-            $eventData['participants'] = null;
-        } else {
-            if (isset($eventData['reminder_time'])) {
-                $reminderTime = Carbon::parse($eventData['reminder_time']);
-                
-                if ($reminderTime->isPast()) {
-                    $eventData['reminder_time'] = null;
-                    $eventData['participants'] = null;
-                } else {
-                    if (isset($eventData['participants'])) {
-                        $eventData['participants'] = array_values(array_unique(
-                            array_map('trim', (array) $eventData['participants'])
-                        ));
-                    }
-                }
-            } else {
-                $eventData['participants'] = null;
-            }
-        }
-
-        $existingEvent = $this->eventRepository->findByClientId($eventData['client_id']);
-
-        if (!$existingEvent) {
-            $eventData['event_id'] = $this->idGenerationService->generate();
-            $event = $this->eventRepository->create($eventData);
-            EventCreated::dispatch($event);
-            return $event;
-        }
-
-        // Last write wins - if incoming event is newer or same time, it overwrites
-        if (strtotime($eventData['updated_at']) >= strtotime($existingEvent->updated_at)) {
-            $event = $this->eventRepository->update($existingEvent, $eventData);
-            EventCreated::dispatch($event);
-            return $event;
-        }
-
-        return $existingEvent;
     }
 }

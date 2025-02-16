@@ -47,4 +47,9 @@ class Event extends Model
     {
         return $query->where('status', 'completed');
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

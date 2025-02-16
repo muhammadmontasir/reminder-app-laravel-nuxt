@@ -29,6 +29,7 @@ class EventRequest extends FormRequest
             'end_time' => 'required|date|after:start_time',
             'status' => 'sometimes|in:upcoming,completed',
             'metadata' => 'nullable|array',
+            'client_id' => 'sometimes|uuid',
             'reminder_time' => [
                 'nullable',
                 'date',
@@ -85,10 +86,18 @@ class EventRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        $data = [];
+
         if ($this->has('participants') && is_string($this->input('participants'))) {
-            $this->merge([
-                'participants' => json_decode($this->input('participants'), true)
-            ]);
+            $data['participants'] = json_decode($this->input('participants'), true);
+        }
+
+        if (!$this->has('client_id')) {
+            $data['client_id'] = auth()->user()->client_id;
+        }
+
+        if (!empty($data)) {
+            $this->merge($data);
         }
     }
 }

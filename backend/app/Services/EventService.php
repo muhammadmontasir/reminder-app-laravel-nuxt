@@ -21,7 +21,7 @@ class EventService
 
     public function createEvent(array $data)
     {
-        $data['client_id'] = (string) Str::uuid();
+        $data['client_id'] = auth()->user()->client_id;
         $data['event_id'] = $this->idGenerationService->generate();
         
         $endTime = Carbon::parse($data['end_time']);
