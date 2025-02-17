@@ -74,13 +74,13 @@
     </div>
 
     <div class="flex justify-end">
-      <BaseButton
+      <UiBaseButton
         type="submit"
         variant="primary"
         :disabled="loading"
       >
         {{ loading ? (isEdit ? 'Updating...' : 'Creating...') : (isEdit ? 'Update Event' : 'Create Event') }}
-      </BaseButton>
+      </UiBaseButton>
     </div>
   </form>
 </template>
@@ -111,7 +111,31 @@ const form = reactive({
 })
 
 const formatDateForInput = (dateString: string) => {
-  return dateString ? new Date(dateString).toISOString().slice(0, 16) : ''
+  if (!dateString) return ''
+  
+  const utcDate = new Date(dateString)
+  // Convert UTC to local time
+  const localDate = new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000)
+  return localDate.toISOString().slice(0, 16)
+}
+
+const formatDateToUTC = (date: string) => {
+  if (date) {
+    // Get user's timezone
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    console.log('User timezone:', userTimezone)
+
+    // Create date object in user's timezone
+    const localDate = new Date(date)
+    console.log('Local time:', localDate.toString())
+    
+    // Convert to UTC
+    const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000)
+    console.log('UTC time:', utcDate.toISOString())
+
+    return utcDate.toISOString().slice(0, 19).replace('T', ' ')
+  }
+  return date
 }
 
 if (props.initialData) {
@@ -128,11 +152,6 @@ watch(participantsInput, (value) => {
   form.participants = value.split(',').map(email => email.trim()).filter(email => email)
 })
 
-
-const formatDateForApi = (date: string) => {
-  return date.replace('T', ' ')
-}
-
 const handleSubmit = async () => {
   try {
     loading.value = true
@@ -140,9 +159,9 @@ const handleSubmit = async () => {
     
     const data = {
       ...form,
-      start_time: formatDateForApi(form.start_time),
-      end_time: formatDateForApi(form.end_time),
-      reminder_time: formatDateForApi(form.reminder_time)
+      start_time: formatDateToUTC(form.start_time),
+      end_time: formatDateToUTC(form.end_time),
+      reminder_time: formatDateToUTC(form.reminder_time)
     }
 
     if (props.isEdit) {
@@ -155,8 +174,8 @@ const handleSubmit = async () => {
 
     emit('success')
   } catch (error: any) {
-    if (error.status === 422) {
-      errors.value = error.data.errors
+    if (error.value.statusCode === 422) {
+      errors.value = error.value.data.errors
       toast.error('Please check the form for errors')
     } else {
       toast.error(props.isEdit ? 'Failed to update event' : 'Failed to create event')

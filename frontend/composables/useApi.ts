@@ -4,10 +4,10 @@ export const useApi = () => {
   const config = useRuntimeConfig()
   const authStore = useAuthStore()
   
-  const getHeaders = () => {
+  const getHeaders = (isMultipart = false) => {
     const headers: Record<string, string> = {
       'Accept': 'application/json',
-      'Content-Type': 'application/json'
+      'Content-Type': isMultipart ? 'multipart/form-data' : 'application/json'
     }
 
     if (authStore.token) {
@@ -30,19 +30,19 @@ export const useApi = () => {
         headers: getHeaders()
       })
       
-      if (error.value) throw error.value
+      if (error.value) throw error
       return data.value
     },
 
-    async post(endpoint: string, body?: any) {
+    async post(endpoint: string, body?: any, isMultipart = false) {
       const { data, error } = await useFetch(endpoint, {
         ...fetchOptions,
         method: 'POST',
         body,
-        headers: getHeaders()
+        headers: getHeaders(isMultipart)
       })
       
-      if (error.value) throw error.value
+      if (error.value) throw error
       return data.value
     },
 
@@ -54,7 +54,7 @@ export const useApi = () => {
         headers: getHeaders()
       })
       
-      if (error.value) throw error.value
+      if (error.value) throw error
       return data.value
     },
 

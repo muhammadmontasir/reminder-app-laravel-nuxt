@@ -41,18 +41,18 @@
           </td>
           <td class="px-4 py-3 text-right text-sm">
             <div class="flex justify-end gap-2">
-              <BaseButton
+              <UiBaseButton
                 variant="secondary"
                 @click="navigateTo(`/events/${event.event_id}/edit`)"
               >
                 Edit
-              </BaseButton>
-              <BaseButton
+              </UiBaseButton>
+              <UiBaseButton
                 variant="danger"
                 @click="handleDelete(event.event_id)"
               >
                 Delete
-              </BaseButton>
+              </UiBaseButton>
             </div>
           </td>
         </tr>

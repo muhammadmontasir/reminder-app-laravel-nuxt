@@ -6,7 +6,6 @@
           <UiBaseButton 
             variant="primary" 
             @click="navigateTo(`/events/${route.params.id}`)" 
-            class="bg-gray-50 text-gray-600"
           >
             Back to Event
           </UiBaseButton>

@@ -3,17 +3,16 @@
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-semibold text-gray-900">Create Event</h1>
-        <BaseButton 
+        <UiBaseButton 
           variant="primary" 
           @click="navigateTo('/')" 
-          class="bg-gray-50 text-gray-600"
         >
           Back to Events
-        </BaseButton>
+        </UiBaseButton>
       </div>
       
       <div class="mt-6 bg-white rounded-lg shadow-sm p-6">
-        <EventForm @success="navigateTo('/')" />
+        <EventsEventForm @success="navigateTo('/')" />
       </div>
     </div>
   </div>
