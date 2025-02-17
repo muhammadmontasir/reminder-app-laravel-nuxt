@@ -124,70 +124,130 @@ All routes require authentication:
 ### Register User
 
 ```bash
-curl -X POST http://localhost/api/v1/register \
-  -H "Content-Type: application/json" \
-  -d '{"name": "John Doe", "email": "john@example.com", "password": "password"}'
+curl --location 'http://localhost/api/register' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--data-raw '{
+    "name": "Test User",
+    "email": "test@example.com",
+    "password": "password123",
+    "password_confirmation": "password123"
+}'
 ```
 
 ### Login User
 
 ```bash
-curl -X POST http://localhost/api/v1/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "john@example.com", "password": "password"}'
+curl --location 'http://localhost/api/login' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--header 'Authorization: Bearer token' \
+--data-raw '{
+    "email": "test@example.com",
+    "password": "password123"
+}'
 ``` 
 
 ### Get User Info
 
 ```bash
-curl -X GET http://localhost/api/v1/user \
-  -H "Authorization: Bearer {token}"
+curl --location 'http://localhost/api/user' \
+--header 'Accept: application/json' \
+--header 'Authorization: Bearer 2|EhgUSkBaO7bfAXboME7lRqG3FUF8r318XUzk0ALW20c71d58'
 ``` 
 
 ### Create Event
 
 ```bash
 curl -X POST http://localhost/api/v1/events \
-  -H "Authorization: Bearer {token}" \  
-  -H "Content-Type: application/json" \
-  -d '{"title": "Event Title", "description": "Event Description", "date": "2024-01-01"}'
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--header 'Authorization: Bearer token' \
+--data-raw '{
+    "title": "Team Meeting (test)",
+    "description": "Weekly sync meeting (test)",
+    "start_time": "2025-03-28 1:00:00",
+    "end_time": "2025-03-29 14:00:00",
+    "metadata": {
+        "location": "Conference Room V"
+    },
+    "reminder_time": "2025-03-28 00:30:00",
+    "participants": ["john@example.com"]
+}'
 ```
 
 ### Update Event
 
 ```bash
-curl -X PUT http://localhost/api/v1/events/{eventId} \
-  -H "Authorization: Bearer {token}" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Updated Title", "description": "Updated Description", "date": "2024-01-02"}'
+curl --location --request PUT 'http://localhost/api/v1/events/EVENT-1739736105-c0PT948N' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--header 'Authorization: Bearer token' \
+--data '{
+    "title": "Updated Team Meeting",
+    "description": "Rescheduled weekly sync",
+    "start_time": "2025-04-22 11:00:00",
+    "end_time": "2025-04-22 12:00:00"
+}'
 ```
 
 ### Delete Event
 
 ```bash
-curl -X DELETE http://localhost/api/v1/events/{eventId} \
-  -H "Authorization: Bearer {token}"
+curl --location --request DELETE 'http://localhost/api/v1/events/EVENT-1739731899-O9QZYMZl' \
+--header 'Accept: application/json' \
+--header 'Authorization: Bearer token'
 ``` 
 
 ### Sync Events
 
 ```bash
-curl -X POST http://localhost/api/v1/events/sync \
-  -H "Authorization: Bearer {token}"
+curl --location 'http://localhost/api/v1/events/sync' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--header 'Authorization: Bearer token' \
+--data-raw '{
+  "events": [
+    {
+      "event_id": "EVENT-1739730425-W0d45HYv", // give event id from previous response
+      "title": "Meeting 121322",
+      "description": "third meeting",
+      "start_time": "2024-03-20T10:00:00Z",
+      "end_time": "2024-03-20T11:00:00Z",
+      "status": "upcoming",
+      "is_online": true,
+      "reminder_time": "2025-03-18 00:30:00",
+      "participants": ["johnnny@example.com"]
+    },
+    {
+      "title": "Meeting 2122",
+      "description": "Second meeting",
+      "start_time": "2024-03-20T14:00:00Z",
+      "end_time": "2024-03-20T15:00:00Z",
+      "status": "upcoming",
+      "is_online": true,
+      "reminder_time": "2025-03-28 00:30:00",
+      "participants": ["john@example.com"]
+    }
+  ]
+}'
 ``` 
 
 ### Import Events
 
 ```bash
-curl -X POST http://localhost/api/v1/events/import \
-  -H "Authorization: Bearer {token}"
+curl --location 'http://localhost/api/v1/events/import' \
+--header 'Accept: application/json' \
+--header 'Authorization: Bearer token' \
+--form 'file=@"/Users/test/test12/events.csv"'
 ``` 
 
 ### Logout User
 
 ```bash
-curl -X POST http://localhost/api/v1/logout \
-  -H "Authorization: Bearer {token}"
+curl --location --request POST 'http://localhost/api/logout' \
+--header 'Accept: application/json' \
+--header 'Authorization: Bearer token'
 ```
 
 ## CSV Import Format
